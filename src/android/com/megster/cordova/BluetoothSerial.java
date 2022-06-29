@@ -41,6 +41,7 @@ public class BluetoothSerial extends CordovaPlugin {
 
     // callbacks
     private CallbackContext connectCallback;
+	private CallbackContext connectCallback2;
     private CallbackContext dataAvailableCallback;
 
     private BluetoothAdapter bluetoothAdapter;
@@ -78,52 +79,59 @@ public class BluetoothSerial extends CordovaPlugin {
         }
 
         boolean validAction = true;
-        
-        if (action.equals(LIST)) {
 
+        if (action.equals(LIST)) {
+			Log.i(TAG, "BluetoothSerialService action.equals(LIST)");
             listBondedDevices(callbackContext);
 
         } else if (action.equals(CONNECT)) {
 
+			Log.i(TAG, "BluetoothSerialService action.equals(CONNECT)");
             boolean secure = true;
             connect(args, secure, callbackContext);
+			connectCallback = callbackContext;
 
         } else if (action.equals(CONNECT_INSECURE)) {
+			Log.i(TAG, "BluetoothSerialService action.equals(CONNECT_INSECURE)");
 
             // see Android docs about Insecure RFCOMM http://goo.gl/1mFjZY
             boolean secure = false;
             connect(args, false, callbackContext);
 
         } else if (action.equals(DISCONNECT)) {
+			Log.i(TAG, "BluetoothSerialService action.equals(DISCONNECT)");
 
             connectCallback = null;
             bluetoothSerialService.stop();
             callbackContext.success();
 
         } else if (action.equals(WRITE)) {
+			Log.i(TAG, "BluetoothSerialService action.equals(WRITE)");
 
             String data = args.getString(0);
             bluetoothSerialService.write(data.getBytes());
             callbackContext.success();
 
         } else if (action.equals(AVAILABLE)) {
+			Log.i(TAG, "BluetoothSerialService action.equals(AVAILABLE)");
 
             callbackContext.success(available());
 
         } else if (action.equals(READ)) {
-
-            callbackContext.success(read());
-
-        } else if (action.equals(READ_UNTIL)) {
+			Log.i(TAG, "BluetoothSerialService action.equals(READ)");
+			dataAvailableCallback = callbackContext;
+        }
+		else if (action.equals(READ_UNTIL)) {
+			Log.i(TAG, "BluetoothSerialService action.equals(READ_UNTIL)");
 
             String interesting = args.getString(0);
             callbackContext.success(readUntil(interesting));
 
         } else if (action.equals(SUBSCRIBE)) {
+			Log.i(TAG, "BluetoothSerialService action.equals(SUBSCRIBE)");
 
             delimiter = args.getString(0);
             dataAvailableCallback = callbackContext;
-            
             bluetoothSerialService.start();
 
             PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
@@ -131,6 +139,7 @@ public class BluetoothSerial extends CordovaPlugin {
             callbackContext.sendPluginResult(result);
 
         } else if (action.equals(UNSUBSCRIBE)) {
+			Log.i(TAG, "BluetoothSerialService action.equals(UNSUBSCRIBE)");
 
             delimiter = null;
             dataAvailableCallback = null;
@@ -138,22 +147,25 @@ public class BluetoothSerial extends CordovaPlugin {
             callbackContext.success();
 
         } else if (action.equals(IS_ENABLED)) {
+			Log.i(TAG, "BluetoothSerialService action.equals(IS_ENABLED)");
 
             if (bluetoothAdapter.isEnabled()) {
-                callbackContext.success();                
+                callbackContext.success();
             } else {
                 callbackContext.error("Bluetooth is disabled.");
-            }            
+            }
 
         } else if (action.equals(IS_CONNECTED)) {
-            
+			Log.i(TAG, "BluetoothSerialService action.equals(IS_CONNECTED)");
+
             if (bluetoothSerialService.getState() == BluetoothSerialService.STATE_CONNECTED) {
-                callbackContext.success();                
+                callbackContext.success();
             } else {
                 callbackContext.error("Not connected.");
             }
 
         } else if (action.equals(CLEAR)) {
+			Log.i(TAG, "BluetoothSerialService action.equals(CLEAR)");
 
             buffer.setLength(0);
             callbackContext.success();
@@ -217,18 +229,20 @@ public class BluetoothSerial extends CordovaPlugin {
              switch (msg.what) {
                  case MESSAGE_READ:
                     buffer.append((String)msg.obj);
-
+					String readData = read() ;
+					Log.i(TAG, "BluetoothSerialService READ " + readData );
                     if (dataAvailableCallback != null) {
-                        sendDataToSubscriber();
+                        sendDataToSubscriber(readData);
                     }
                     break;
                  case MESSAGE_STATE_CHANGE:
 
-                    if(D) Log.i(TAG, "MESSAGE_STATE_CHANGE: " + msg.arg1);
+                    if(D) Log.i(TAG, "BluetoothSerialService MESSAGE_STATE_CHANGE: " + msg.arg1);
                     switch (msg.arg1) {
                         case BluetoothSerialService.STATE_CONNECTED:
                             Log.i(TAG, "BluetoothSerialService.STATE_CONNECTED");
                             notifyConnectionSuccess();
+
                             break;
                         case BluetoothSerialService.STATE_CONNECTING:
                             Log.i(TAG, "BluetoothSerialService.STATE_CONNECTING");
@@ -247,7 +261,7 @@ public class BluetoothSerial extends CordovaPlugin {
                     //  Log.i(TAG, "Wrote: " + writeMessage);
                     break;
                 case MESSAGE_DEVICE_NAME:
-                    Log.i(TAG, msg.getData().getString(DEVICE_NAME));
+                    Log.i(TAG, "BluetoothSerialService " + msg.getData().getString(DEVICE_NAME));
                     break;
                 case MESSAGE_TOAST:
                     String message = msg.getData().getString(TOAST);
@@ -265,22 +279,22 @@ public class BluetoothSerial extends CordovaPlugin {
     }
 
     private void notifyConnectionSuccess() {
-        if (connectCallback != null) {
+
+		if (connectCallback != null) {
             PluginResult result = new PluginResult(PluginResult.Status.OK);
             result.setKeepCallback(true);
             connectCallback.sendPluginResult(result);
         }
     }
 
-    private void sendDataToSubscriber() {
-        String data = readUntil(delimiter);
-        if (data != null && data.length() > 0) {
-            PluginResult result = new PluginResult(PluginResult.Status.OK, data);
+    private void sendDataToSubscriber(String readData) {
+
+		if (readData != null && readData.length() > 0) {
+			PluginResult result = new PluginResult(PluginResult.Status.OK, readData);
             result.setKeepCallback(true);
             dataAvailableCallback.sendPluginResult(result);
-
-            sendDataToSubscriber();
-        }
+			Log.i(TAG, "BluetoothSerialService sendDataToSubscriber 2" + readData);
+		}
     }
 
     private int available() {

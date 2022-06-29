@@ -1,0 +1,32 @@
+{
+  "name": "cordova-plugin-custom-bluetoothserial",
+  "version": "0.2.3",
+  "description": "Bluetooth Serial Communication Plugin (forked from Don Coleman's original)",
+  "main": "./www/bluetoothSerial.js",
+  "cordova": {
+    "id": "cordova-plugin-custom-bluetoothserial",
+    "platforms": [
+      "android",
+      "ios",
+      "wp8"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RehaGoal/cordova-plugin-custom-bluetoothserial.git"
+  },
+  "keywords": [
+    "cordova",
+    "bluetooth",
+    "serial",
+    "ble",
+    "arduino",
+    "ecosystem:cordova"
+  ],
+  "author": "Don Coleman <don.coleman@gmail.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/RehaGoal/cordova-plugin-custom-bluetoothserial.git"
+  },
+  "homepage": "https://github.com/RehaGoal/cordova-plugin-custom-bluetoothserial.git#readme"
+}
